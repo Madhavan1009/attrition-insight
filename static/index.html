@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attrition Insight | PROITBRIDGE</title>
+  <link rel="icon" href="/static/logo.png">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="top-in">
+      <img class="logo" src="/static/logo.png" alt="PROITBRIDGE">
+      <span class="sep" aria-hidden="true"></span>
+      <div class="brand">
+        <div class="brand-t">Attrition Insight</div>
+        <div class="brand-s">HR attrition risk &middot; scikit-learn + OpenAI</div>
+      </div>
+      <div class="status">
+        <span class="chip" id="chip-model"><i></i>Model loading&hellip;</span>
+        <span class="chip" id="chip-ai"><i></i>AI summary</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-in">
+      <div>
+        <div class="eyebrow">Machine learning &middot; Cloud Run</div>
+        <h1>Who might leave &mdash; <span>and what would help them stay?</span></h1>
+        <p>Enter an employee profile. The model predicts the attrition risk and shows <b>why</b>; OpenAI turns it into a <b>retention plan</b>.</p>
+      </div>
+      <div class="hero-stats" id="hero-stats"></div>
+    </div>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab on" data-tab="predict" role="tab">Predict one employee</button>
+    <button class="tab" data-tab="team" role="tab">Score a team (CSV)</button>
+    <button class="tab" data-tab="card" role="tab">Model card</button>
+  </nav>
+
+  <main>
+    <!-- PREDICT -->
+    <section class="panel on" id="tab-predict">
+      <form class="card form" id="form" novalidate>
+        <div class="card-h"><h2>Employee profile</h2>
+          <div class="samples"><span>Try:</span><button type="button" class="link" data-sample="stable">Stable employee</button><button type="button" class="link" data-sample="at_risk">At-risk employee</button></div>
+        </div>
+
+        <fieldset><legend>Role &amp; pay</legend>
+          <label>Department<select name="department" required>
+            <option>Engineering</option><option>Sales</option><option>Support</option><option>Operations</option><option>Finance</option><option>HR</option></select></label>
+          <label>Job level<select name="job_level" required>
+            <option value="1">1 &middot; Associate</option><option value="2">2 &middot; Senior associate</option><option value="3" selected>3 &middot; Lead</option><option value="4">4 &middot; Manager</option><option value="5">5 &middot; Senior manager</option></select></label>
+          <label>Monthly income (&#8377;)<input name="monthly_income" type="number" min="10000" max="500000" step="500" value="75000" required></label>
+          <label>Age<input name="age" type="number" min="18" max="65" value="32" required></label>
+        </fieldset>
+
+        <fieldset><legend>Career</legend>
+          <label>Years at company<input name="years_at_company" type="number" min="0" max="45" value="4" required></label>
+          <label>Years since last promotion<input name="years_since_promotion" type="number" min="0" max="45" value="2" required></label>
+          <label>Companies worked before<input name="num_companies_worked" type="number" min="0" max="20" value="2" required></label>
+          <label>Distance from home (km)<input name="distance_km" type="number" min="0" max="200" value="10" required></label>
+        </fieldset>
+
+        <fieldset><legend>Work &amp; wellbeing</legend>
+          <div class="seg-l">Works overtime
+            <div class="seg" data-name="overtime"><button type="button" data-v="No" class="on">No</button><button type="button" data-v="Yes">Yes</button></div></div>
+          <div class="seg-l">Job satisfaction
+            <div class="seg" data-name="job_satisfaction"><button type="button" data-v="1">1 Low</button><button type="button" data-v="2">2</button><button type="button" data-v="3" class="on">3</button><button type="button" data-v="4">4 High</button></div></div>
+          <div class="seg-l">Work-life balance
+            <div class="seg" data-name="work_life_balance"><button type="button" data-v="1">1 Poor</button><button type="button" data-v="2">2</button><button type="button" data-v="3" class="on">3</button><button type="button" data-v="4">4 Great</button></div></div>
+        </fieldset>
+
+        <div class="form-f">
+          <p class="err" id="form-err" hidden></p>
+          <button class="btn" type="submit" id="btn-predict"><span>Predict risk</span></button>
+        </div>
+      </form>
+
+      <div class="card result" id="result">
+        <div class="empty" id="empty">
+          <div class="empty-i" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M8 38V20M18 38V12M28 38V24M38 38V8"/><path d="M4 42h40"/></svg></div>
+          <h3>No prediction yet</h3>
+          <p>Fill the profile &mdash; or try a sample &mdash; and press <b>Predict risk</b>.</p>
+        </div>
+        <div class="res" id="res" hidden>
+          <div class="score">
+            <svg class="gauge" viewBox="0 0 200 110" aria-hidden="true"><path class="g-bg" d="M15 100a85 85 0 0 1 170 0"/><path class="g-fg" id="g-fg" d="M15 100a85 85 0 0 1 170 0"/></svg>
+            <div class="score-t"><div class="pct" id="pct">0%</div><div class="band" id="band">Low</div></div>
+            <p class="score-n">Chance this employee leaves, compared with similar employees in the training data.</p>
+          </div>
+          <h3 class="sub">What drives this score</h3>
+          <ul class="drivers" id="drivers"></ul>
+          <div class="ai" id="ai">
+            <div class="ai-h"><span class="ai-b">AI</span><h3>Retention plan</h3><span class="ai-m" id="ai-model"></span></div>
+            <div class="ai-body" id="ai-body"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TEAM -->
+    <section class="panel" id="tab-team">
+      <div class="card">
+        <div class="card-h"><h2>Score a whole team</h2><a class="link" href="/static/sample_team.csv" download>Download sample CSV</a></div>
+        <p class="muted">Upload a CSV with the same columns as the sample (up to 1,000 rows, 1 MB). Nothing is stored &mdash; the file is scored and forgotten.</p>
+        <label class="drop" id="drop"><input type="file" id="file" accept=".csv,text/csv"><span class="drop-i" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 32V10M15 19l9-9 9 9"/><path d="M8 30v8h32v-8"/></svg></span><b>Choose a CSV file</b><span>or drop it here</span></label>
+        <p class="err" id="team-err" hidden></p>
+        <div id="team-out" hidden>
+          <div class="sum" id="team-sum"></div>
+          <div class="tw"><table><thead><tr><th>Employee</th><th>Department</th><th>Risk</th><th>Band</th><th>Top driver</th></tr></thead><tbody id="team-rows"></tbody></table></div>
+          <p class="muted" id="team-note"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODEL CARD -->
+    <section class="panel" id="tab-card">
+      <div class="card"><div class="card-h"><h2>Model card</h2><span class="muted" id="mc-ver"></span></div>
+        <div class="tiles" id="mc-tiles"></div>
+        <dl class="mc" id="mc-list"></dl>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">PROITBRIDGE &middot; Attrition Insight &middot; Decision support only &mdash; never use a model score alone to make decisions about a person.</footer>
+  <script src="/static/app.js"></script>
+</body>
+</html>
