@@ -78,5 +78,9 @@ def predict(rows):
     frame = pd.DataFrame(rows)[FEATURES]
     probabilities = bundle()["pipeline"].predict_proba(frame)[:, 1]
     drivers = _drivers(frame)
-    return [{"probability": round(float(p), 4), "risk_percent": int(np.rint(p * 100)), "band": band(float(p)), "drivers": d}
-            for p, d in zip(probabilities, drivers)]
+    out = []
+    for p, d in zip(probabilities, drivers):
+        percent = int(np.rint(p * 100))
+        # band from the shown percent, so "40%" is always High (40% and above), never Medium
+        out.append({"probability": round(float(p), 4), "risk_percent": percent, "band": band(percent / 100), "drivers": d})
+    return out

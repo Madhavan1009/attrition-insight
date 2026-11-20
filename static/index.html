@@ -19,6 +19,7 @@
       <div class="status">
         <span class="chip" id="chip-model"><i></i>Model loading&hellip;</span>
         <span class="chip" id="chip-ai"><i></i>AI summary</span>
+        <span class="chip" id="chip-store"><i></i>Storage</span>
       </div>
     </div>
   </header>
@@ -105,13 +106,18 @@
     <section class="panel" id="tab-team">
       <div class="card">
         <div class="card-h"><h2>Score a whole team</h2><a class="link" href="/static/sample_team.csv" download>Download sample CSV</a></div>
-        <p class="muted">Upload a CSV with the same columns as the sample (up to 1,000 rows, 1 MB). Nothing is stored &mdash; the file is scored and forgotten.</p>
+        <p class="muted">Upload a CSV with the same columns as the sample (up to 1,000 rows, 1 MB). <span id="team-store-txt">Nothing is stored &mdash; the file is scored and forgotten.</span></p>
         <label class="drop" id="drop"><input type="file" id="file" accept=".csv,text/csv"><span class="drop-i" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 32V10M15 19l9-9 9 9"/><path d="M8 30v8h32v-8"/></svg></span><b>Choose a CSV file</b><span>or drop it here</span></label>
         <p class="err" id="team-err" hidden></p>
         <div id="team-out" hidden>
           <div class="sum" id="team-sum"></div>
           <div class="tw"><table><thead><tr><th>Employee</th><th>Department</th><th>Risk</th><th>Band</th><th>Top driver</th></tr></thead><tbody id="team-rows"></tbody></table></div>
           <p class="muted" id="team-note"></p>
+          <p class="store-msg" id="team-store" hidden></p>
+        </div>
+        <div class="saved" id="saved" hidden>
+          <div class="saved-h"><h3>Saved in Cloud Storage</h3><span class="muted">Newest first &middot; files stay even when the app scales to zero</span></div>
+          <ul class="saved-l" id="saved-list"></ul>
         </div>
       </div>
     </section>

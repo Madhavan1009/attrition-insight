@@ -117,6 +117,8 @@
         '%</b></td><td><span class="pill b-' + x.band + '">' + x.band + "</span></td><td>" + esc(x.top_driver) + "</td></tr>").join("");
       $("#team-note").textContent = r.errors.length ? r.errors.length + " row(s) skipped: " + r.errors.map((e) => "row " + e.row + " (" + e.message + ")").join("; ") : "Sorted by risk, highest first.";
       out.hidden = false;
+      showSaved(r.storage);
+      loadStorage();
     } catch (ex) { err.textContent = ex.message; err.hidden = false; }
     finally { drop.querySelector("b").textContent = "Choose a CSV file"; file.value = ""; }
   }
@@ -125,7 +127,35 @@
   ["dragleave", "drop"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
   drop.addEventListener("drop", (e) => scoreFile(e.dataTransfer.files[0]));
 
+  /* ---------- Cloud Storage (mounted bucket) ---------- */
+  const FILE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>';
+  function showSaved(st) {
+    const el = $("#team-store");
+    if (!st) { el.hidden = true; return; }
+    el.className = "store-msg " + (st.saved ? "ok" : "off");
+    el.innerHTML = st.saved ? "<b>Saved to Cloud Storage:</b> " + st.files.map((f) => "<code>" + esc(f) + "</code>").join(" and ") : esc(st.message);
+    el.hidden = false;
+  }
+  async function loadStorage() {
+    const chip = $("#chip-store");
+    try {
+      const st = await api("/api/storage");
+      chip.classList.remove("ok", "off"); chip.classList.add(st.enabled ? "ok" : "off");
+      chip.innerHTML = "<i></i>Storage " + (st.enabled ? "on" : "off");
+      $("#team-store-txt").textContent = st.enabled
+        ? "Each upload and its scores are saved privately to your Cloud Storage bucket."
+        : "Nothing is stored \u2014 the file is scored and forgotten.";
+      $("#saved").hidden = !st.enabled;
+      $("#saved-list").innerHTML = st.files.length
+        ? st.files.map((f) => '<li class="' + (f.name.endsWith("_scored.csv") ? "sc" : "or") + '">' + FILE_ICON + "<span>" + esc(f.name) + "</span><small>" + f.kb + " KB</small></li>").join("")
+        : '<li class="none">No files yet &mdash; upload a CSV above.</li>';
+    } catch (ex) {
+      chip.classList.add("off"); chip.innerHTML = "<i></i>Storage off";
+    }
+  }
+
   /* ---------- start-up ---------- */
+  loadStorage();
   (async function init() {
     try {
       const [h, card, s] = await Promise.all([api("/api/health"), api("/api/model-card"), api("/api/samples")]);

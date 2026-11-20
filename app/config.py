@@ -16,6 +16,9 @@ OPENAI_TIMEOUT_SECONDS = 25
 MAX_UPLOAD_BYTES = 1_000_000              # 1 MB CSV
 MAX_BATCH_ROWS = 1000
 
+# Cloud Storage bucket mounted as a folder (Cloud Run volume). If the folder does not exist, saving is off.
+DATA_DIR = Path(os.getenv("DATA_DIR", "/mnt/data"))
+
 
 def openai_key():
     return os.getenv("OPENAI_API_KEY", "").strip()

@@ -1,0 +1,9 @@
+employee_id,age,department,job_level,monthly_income,years_at_company,years_since_promotion,overtime,distance_km,job_satisfaction,work_life_balance,num_companies_worked
+HRX-401,28,Sales,1,36000,4,1,Yes,13,3,2,1
+HRX-402,43,Engineering,4,148000,7,1,Maybe,7,1,3,3
+HRX-403,38,Operations,2,41000,2,1,No,5,2,3,2
+HRX-404,70,Engineering,2,43500,3,0,No,6,2,4,2
+HRX-405,40,Sales,4,106500,1,1,No,7,2,3,5
+HRX-406,35,Engineering,2,58500,4,3,Yes,7,6,3,4
+HRX-407,26,Support,1,29000,5,1,No,1,2,3,0
+HRX-408,32,Engineering,3,75500,2,1,No,23,4,3,0

@@ -7,6 +7,7 @@ explains **why** (the top drivers), and uses OpenAI to write a short **retention
 - **API:** FastAPI — single prediction, AI summary, and CSV scoring for a whole team.
 - **Front end:** PROITBRIDGE navy and white theme, works on laptop and phone.
 - **Deploys to:** Google Cloud Run from source (no Dockerfile). The OpenAI key comes from Secret Manager.
+- **Storage (optional):** mount a Cloud Storage bucket at `/mnt/data` and every team upload and its scores are saved there.
 
 ## Project structure
 
@@ -18,6 +19,7 @@ attrition-insight/
 │   ├── features.py         the 11 input features and their labels
 │   ├── model.py            loads the model, predicts, explains the drivers
 │   ├── ai.py               OpenAI retention summary
+│   ├── storage.py          saves team uploads to the mounted bucket (/mnt/data)
 │   └── schemas.py          request / response validation
 ├── ml/
 │   ├── generate_data.py    creates data/employees.csv (synthetic)
@@ -25,6 +27,7 @@ attrition-insight/
 ├── data/employees.csv      training data (synthetic)
 ├── model/                  attrition_model.joblib + model_card.json
 ├── static/                 web page, logo, fonts, sample_team.csv
+├── sample_data/            ready-made team CSVs to upload (see below)
 ├── tests/test_api.py       API tests (pytest)
 ├── requirements.txt        exact versions used by Cloud Run
 ├── requirements-dev.txt    test tools
@@ -80,7 +83,8 @@ python ml/train.py
 | GET | `/api/samples` | two sample employees |
 | POST | `/api/predict` | risk %, band (Low / Medium / High) and top drivers |
 | POST | `/api/explain` | AI summary + 3 retention actions (needs `OPENAI_API_KEY`) |
-| POST | `/api/predict-batch` | upload a CSV (up to 1,000 rows, 1 MB) and score a team |
+| POST | `/api/predict-batch` | upload a CSV (up to 1,000 rows, 1 MB) and score a team; saved to storage when a bucket is mounted |
+| GET | `/api/storage` | `enabled` (bucket mounted or not) and the newest saved files |
 
 Interactive API docs: `/docs`.
 
@@ -114,6 +118,31 @@ gcloud run deploy attrition-insight \
   --set-secrets OPENAI_API_KEY=openai-api-key:latest \
   --set-build-env-vars GOOGLE_ENTRYPOINT="uvicorn main:app --host 0.0.0.0 --port 8080"
 ```
+
+## Save team uploads to Cloud Storage (optional)
+
+Cloud Run's own disk is wiped when an instance stops. To keep files, mount a Cloud Storage bucket as a folder:
+
+1. **Cloud Storage → Buckets → Create**: a unique name, location `asia-south1`, keep public access prevented.
+2. **Cloud Run → attrition-insight → Edit & deploy new revision → Volumes → Add volume**: type *Cloud Storage bucket*, your bucket, mount path **`/mnt/data`**, Read-only **off**. Deploy.
+3. On the bucket, give the Cloud Run service account (`PROJECT_NUMBER-compute@developer.gserviceaccount.com`) the role **Storage Object User**.
+
+Now each team upload saves two files in the bucket: `team-<date>_<time>_<id>_original.csv` (the upload) and `..._scored.csv` (risk, band, top driver).
+The header shows **Storage on**, and the team tab lists the newest saved files. Without a mounted folder (for example on your laptop) the app works as before and saves nothing.
+To use another folder, set the environment variable `DATA_DIR`.
+
+## Sample files to upload
+
+| File | What it shows |
+|---|---|
+| `sample_data/team_sales_12.csv` | A Sales team: 4 High, 2 Medium, 6 Low |
+| `sample_data/team_support_10.csv` | A Support team: 3 High, 1 Medium, 6 Low |
+| `sample_data/team_engineering_15.csv` | A mostly stable Engineering team |
+| `sample_data/company_mixed_50.csv` | 50 employees across all departments |
+| `sample_data/team_with_errors_8.csv` | 3 bad rows (overtime "Maybe", age 70, satisfaction 6): the app skips them and says why |
+| `sample_data/company_1000_rows.csv` | The maximum allowed size (1,000 rows) |
+
+All sample employees are synthetic.
 
 ## Responsible use
 

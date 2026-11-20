@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
-from app import ai, model
+from app import ai, model, storage
 from app.config import MAX_BATCH_ROWS, MAX_UPLOAD_BYTES, STATIC_DIR
 from app.features import FEATURES
 from app.schemas import Employee, ExplainRequest, Explanation, Prediction
@@ -31,6 +31,10 @@ SAMPLES = {
 
 model.bundle()        # load the model at start-up, not on the first request
 model.model_card()
+if storage.enabled():
+    log.info("storage on: team uploads are saved to %s", storage.config.DATA_DIR)
+else:
+    log.info("storage off: %s not found, team uploads are not saved", storage.config.DATA_DIR)
 
 
 @app.get("/", include_in_schema=False)
@@ -46,6 +50,11 @@ def health():
 @app.get("/api/model-card")
 def model_card():
     return model.model_card()
+
+
+@app.get("/api/storage")
+def storage_status():
+    return {"enabled": storage.enabled(), "files": storage.recent()}
 
 
 @app.get("/api/samples")
@@ -106,5 +115,6 @@ async def predict_batch(file: UploadFile = File(...)):
            for i, e, r in zip(ids, valid, results)]
     out.sort(key=lambda r: r["risk_percent"], reverse=True)
     summary = {b: sum(1 for r in out if r["band"] == b) for b in ("High", "Medium", "Low")}
-    log.info("batch rows=%d errors=%d", len(out), len(errors))
-    return {"rows": len(out), "summary": summary, "results": out, "errors": errors[:20]}
+    saved = storage.save(raw, out) if out else {"saved": False, "files": [], "message": "No valid rows, so nothing was saved."}
+    log.info("batch rows=%d errors=%d saved=%s", len(out), len(errors), saved["saved"])
+    return {"rows": len(out), "summary": summary, "results": out, "errors": errors[:20], "storage": saved}
